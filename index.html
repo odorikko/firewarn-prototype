@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<title>FireWarn – Prototipo v5</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@400;600;700;800&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0f14;--bg2:#0f1820;--bg3:#132030;
+  --cyan:#00d4ff;--cyan-dim:#00a8cc;
+  --orange:#ff6b35;--orange2:#e84c00;
+  --green:#39ff7e;--yellow:#f5c542;--red:#ff3b3b;
+  --text:#c8e6f0;--text-dim:#6a8fa0;--border:#1e3a4a;
+  --mono:'Share Tech Mono',monospace;--sans:'Exo 2',sans-serif;
+}
+
+/* ── FULL-SCREEN LAYOUT ── */
+html,body{height:100%;width:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);display:flex;justify-content:center;align-items:flex-start;padding:0;min-height:100vh;overflow-x:hidden}
+.phone{width:100%;max-width:430px;background:var(--bg);min-height:100vh;position:relative;display:flex;flex-direction:column}
+
+/* On larger screens, give it a phone look */
+@media(min-width:500px){
+  body{padding:20px;align-items:center;background:#111}
+  .phone{border-radius:40px;border:2px solid var(--border);box-shadow:0 0 60px rgba(0,212,255,.08);min-height:700px;max-height:900px;overflow:hidden}
+}
+
+.screen{display:none;flex-direction:column;flex:1;height:100%}.screen.active{display:flex}
+.scroll{overflow-y:auto;flex:1;padding-bottom:90px}
+.scroll::-webkit-scrollbar{width:3px}
+.scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* TOPBAR */
+.topbar{background:linear-gradient(180deg,#0d1e2c,#0a1520);padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.tb-title{font-family:var(--mono);color:var(--cyan);font-size:15px;font-weight:700;letter-spacing:1px}
+.tb-sub{font-family:var(--mono);font-size:10px;color:var(--text-dim);margin-top:2px;letter-spacing:.5px}
+.ib{background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:18px;padding:4px;transition:color .2s}
+.ib:hover{color:var(--cyan)}
+.nb{background:var(--orange);color:#fff;font-family:var(--mono);font-size:11px;font-weight:700;width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer}
+
+/* LOGIN */
+#s-login{background:linear-gradient(160deg,#060e16,#0a1a26 60%,#0d2030);justify-content:center;align-items:center;padding:30px 24px;gap:0}
+.ll{font-size:52px;margin-bottom:8px;animation:pf 2s ease-in-out infinite;filter:drop-shadow(0 0 10px rgba(255,100,0,.7))}
+@keyframes pf{0%,100%{filter:drop-shadow(0 0 10px rgba(255,100,0,.7))}50%{filter:drop-shadow(0 0 22px rgba(255,100,0,1))}}
+.lb{font-family:var(--mono);font-size:28px;font-weight:700;color:var(--cyan);letter-spacing:3px;margin-bottom:4px}
+.lt{font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;margin-bottom:32px;text-align:center}
+.pl{font-family:var(--mono);font-size:11px;color:var(--text-dim);letter-spacing:1px;margin-bottom:14px;align-self:flex-start}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;margin-bottom:24px}
+.pc{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:18px 10px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;transition:border-color .2s,background .2s,transform .15s}
+.pc:hover,.pc:active{border-color:var(--cyan);background:#162a38;transform:scale(1.03)}
+.pc .pi{font-size:32px}.pc .pn{font-family:var(--mono);font-size:11px;color:var(--text);letter-spacing:.5px;text-align:center}
+.pc .pd{font-size:9px;color:var(--text-dim);text-align:center;line-height:1.4}
+.lv{font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:8px}
+
+/* RED FAMILIAR */
+.fam-card{margin:10px 14px 0;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:14px}
+.fam-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.fam-title{font-family:var(--mono);font-size:11px;color:var(--cyan);letter-spacing:1px}
+.fam-member{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.fam-member:last-child{border-bottom:none}
+.fam-avatar{font-size:26px;width:36px;text-align:center}
+.fam-info{flex:1}
+.fam-name{font-size:13px;font-weight:700;color:var(--text)}
+.fam-status{font-family:var(--mono);font-size:9px;margin-top:2px}
+.fam-status.safe{color:var(--green)}.fam-status.warn{color:var(--yellow)}.fam-status.unk{color:var(--text-dim)}
+.fam-loc{font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:1px}
+.fam-ping{background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.3);border-radius:8px;padding:4px 8px;font-family:var(--mono);font-size:9px;color:var(--cyan);cursor:pointer;white-space:nowrap}
+.fam-ping:hover{background:rgba(0,212,255,.2)}
+.evac-assist{margin:10px 14px 0;background:linear-gradient(135deg,rgba(255,107,53,.1),rgba(255,59,59,.08));border:1px solid rgba(255,107,53,.4);border-radius:14px;padding:14px;cursor:pointer;transition:background .2s}
+.evac-assist:hover{background:linear-gradient(135deg,rgba(255,107,53,.18),rgba(255,59,59,.14))}
+.ea-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.ea-icon{font-size:24px}
+.ea-title{font-size:14px;font-weight:800;color:var(--orange)}
+.ea-sub{font-family:var(--mono);font-size:9px;color:var(--text-dim);line-height:1.6}
+.ea-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ea-tag{background:rgba(255,107,53,.15);border:1px solid rgba(255,107,53,.3);border-radius:20px;padding:3px 10px;font-family:var(--mono);font-size:9px;color:var(--orange)}
+
+/* GANADERO */
+.gan-alert{margin:12px 14px 0;background:rgba(245,197,66,.06);border:1px solid rgba(245,197,66,.3);border-radius:14px;padding:14px}
+.gan-header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.gan-icon{font-size:26px}
+.gan-title{font-size:13px;font-weight:700;color:var(--yellow)}
+.gan-sub{font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:2px}
+.gan-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.gan-item:last-child{border-bottom:none}
+.gan-emoji{font-size:20px;margin-top:1px}
+.gan-text{flex:1}
+.gan-name{font-size:12px;font-weight:700;color:var(--text)}
+.gan-detail{font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:2px;line-height:1.5}
+.gan-badge{font-family:var(--mono);font-size:9px;border-radius:8px;padding:3px 8px;flex-shrink:0;margin-top:1px}
+.gan-badge.r{background:rgba(255,59,59,.15);color:var(--red);border:1px solid rgba(255,59,59,.3)}
+.gan-badge.y{background:rgba(245,197,66,.15);color:var(--yellow);border:1px solid rgba(245,197,66,.3)}
+.gan-badge.g{background:rgba(57,255,126,.15);color:var(--green);border:1px solid rgba(57,255,126,.3)}
+
+/* OFFLINE TOGGLE */
+.offline-toggle{margin:14px 14px 0;background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:14px}
+.ot-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ot-title{font-family:var(--mono);font-size:11px;color:var(--cyan);letter-spacing:1px}
+.toggle-wrap{display:flex;align-items:center;gap:10px}
+.toggle-label{font-family:var(--mono);font-size:9px;color:var(--text-dim)}
+.toggle-sw{position:relative;width:48px;height:26px;cursor:pointer}
+.toggle-sw input{opacity:0;width:0;height:0}
+.toggle-track{position:absolute;inset:0;background:#1e3a4a;border-radius:13px;transition:background .3s}
+.toggle-knob{position:absolute;top:3px;left:3px;width:20px;height:20px;background:var(--text-dim);border-radius:50%;transition:transform .3s,background .3s}
+.toggle-sw input:checked ~ .toggle-track{background:rgba(255,59,59,.3);border:1px solid var(--red)}
+.toggle-sw input:checked ~ .toggle-knob{transform:translateX(22px);background:var(--red)}
+.ot-body{font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:1.7}
+.offline-panel{display:none;margin-top:10px;background:rgba(255,59,59,.06);border:1px solid rgba(255,59,59,.25);border-radius:10px;padding:12px}
+.offline-panel.show{display:block}
+.op-title{font-family:var(--mono);font-size:10px;color:var(--red);letter-spacing:1px;margin-bottom:8px}
+.op-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid rgba(30,58,74,.6);font-family:var(--mono);font-size:10px}
+.op-row:last-child{border-bottom:none}
+.op-label{color:var(--text-dim)}.op-val{color:var(--green)}
+.op-warn{color:var(--red);margin-top:6px;font-family:var(--mono);font-size:9px}
+
+/* MAPA CUELLO BOTELLA */
+.mapa-alerts{margin:10px 14px 0}
+.ma-item{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:8px;cursor:pointer;transition:border-color .2s}
+.ma-item:hover{border-color:var(--yellow)}
+.ma-item .mai{font-size:20px}
+.ma-item .man{flex:1}
+.ma-item .manm{font-size:13px;font-weight:600;color:var(--text)}
+.ma-item .mad{font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:2px}
+.ma-pill{font-family:var(--mono);font-size:9px;border-radius:8px;padding:3px 8px}
+.ma-pill.r{background:rgba(255,59,59,.2);color:var(--red);border:1px solid rgba(255,59,59,.3)}
+.ma-pill.y{background:rgba(245,197,66,.15);color:var(--yellow);border:1px solid rgba(245,197,66,.3)}
+.ma-pill.g{background:rgba(57,255,126,.15);color:var(--green);border:1px solid rgba(57,255,126,.3)}
+.alt-route{margin:0 14px 10px;background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.2);border-radius:12px;padding:12px 14px}
+.ar-label{font-family:var(--mono);font-size:9px;color:var(--cyan);letter-spacing:1px;margin-bottom:6px}
+.ar-body{font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:1.7}
+
+/* CAJA NEGRA */
+.cn-card{margin:12px 14px 0;background:linear-gradient(135deg,#0e2030,#162a3a);border:1px solid rgba(0,212,255,.2);border-radius:14px;padding:16px}
+.cn-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.cn-icon{font-size:26px}
+.cn-title{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing:1px}
+.cn-sub{font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:2px}
+.cn-stat{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(30,58,74,.8)}
+.cn-stat:last-child{border-bottom:none}
+.cn-label{font-family:var(--mono);font-size:10px;color:var(--text-dim)}
+.cn-val{font-family:var(--mono);font-size:11px;font-weight:700}
+.cn-val.g{color:var(--green)}.cn-val.b{color:var(--cyan)}.cn-val.y{color:var(--yellow)}
+.cn-rec{margin-top:12px;background:rgba(57,255,126,.06);border:1px solid rgba(57,255,126,.2);border-radius:10px;padding:10px}
+.cn-rec-label{font-family:var(--mono);font-size:9px;color:var(--green);letter-spacing:1px;margin-bottom:6px}
+.cn-rec-body{font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:1.7}
+
+/* MAP */
+.map{position:relative;background:#081218;height:220px;overflow:hidden;border-bottom:1px solid var(--border)}
+.mg{position:absolute;inset:0;background-image:linear-gradient(rgba(0,212,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(0,212,255,.06) 1px,transparent 1px);background-size:30px 30px}
+.sl{position:absolute;font-family:var(--mono);font-size:10px;color:rgba(0,212,255,.4);letter-spacing:1px}
+.sa{top:14px;left:16px}.sb{top:14px;right:16px}.sc{bottom:14px;left:16px}
+.co{position:absolute;bottom:10px;right:12px;font-family:var(--mono);font-size:9px;color:rgba(0,212,255,.35)}
+.ze{position:absolute;border-radius:50%;border:1px solid rgba(255,107,53,.35);background:radial-gradient(ellipse,rgba(255,107,53,.12) 0%,transparent 70%);pointer-events:none}
+.z1{width:140px;height:90px;top:60px;left:40px}.z2{width:120px;height:80px;top:80px;left:130px}
+.fd{position:absolute;font-size:22px;cursor:pointer;filter:drop-shadow(0 0 6px rgba(255,100,0,.7));animation:pf 2s ease-in-out infinite;transition:transform .2s}
+.fd:hover{transform:scale(1.3)}
+.f1{top:55px;left:70px}.f2{top:30px;left:200px}.f3{top:95px;left:155px}.f4{top:118px;left:80px}.f5{top:118px;left:210px}
+
+/* CARDS */
+.ab{margin:14px 14px 0;background:rgba(255,59,59,.08);border:1px solid rgba(255,59,59,.35);border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;transition:background .2s}
+.ab:hover{background:rgba(255,59,59,.14)}
+.al{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:4px}
+.at{font-size:18px;font-weight:800;color:var(--orange);line-height:1.2}
+.as{font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:4px}
+.abg{background:var(--orange2);border-radius:10px;padding:6px 12px;font-size:12px;font-weight:700;color:#fff;white-space:nowrap}
+.wc{margin:10px 14px 0;background:rgba(255,107,53,.07);border:1px solid rgba(255,107,53,.25);border-radius:14px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.wi{font-family:var(--mono);font-size:11px;color:var(--text);line-height:1.7}
+.rp{background:rgba(255,59,59,.2);border:1px solid rgba(255,59,59,.5);border-radius:10px;padding:8px 14px;text-align:center}
+.rl{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--red);display:block;margin-top:2px}
+
+/* TABS */
+.tabs{margin:14px 14px 0;display:flex;border-bottom:1px solid var(--border);overflow-x:auto}
+.tabs::-webkit-scrollbar{height:0}
+.tbb{flex:0 0 auto;background:none;border:none;cursor:pointer;font-family:var(--mono);font-size:9px;color:var(--text-dim);padding:10px 10px;letter-spacing:.5px;position:relative;transition:color .2s;white-space:nowrap}
+.tbb.active{color:var(--cyan)}
+.tbb.active::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--cyan);border-radius:1px}
+
+/* METRICS */
+.mg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 14px 0}
+.mc{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:16px 14px;cursor:pointer;transition:border-color .2s,background .2s}
+.mc:hover{border-color:var(--cyan-dim);background:#162a38}
+.mlb{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px}
+.mi{font-size:28px;margin-bottom:6px;display:block}
+.mv{font-family:var(--mono);font-size:22px;font-weight:700}
+.mv.g{color:var(--green)}.mv.b{color:var(--cyan)}.mv.o{color:var(--orange)}.mv.r{color:var(--red)}
+
+/* IA PREDICCION */
+.ia-card{margin:12px 14px 0;background:linear-gradient(135deg,#0e2030,#162a3a);border:1px solid rgba(0,212,255,.25);border-radius:14px;padding:16px}
+.ia-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.ia-icon{font-size:26px}
+.ia-title{font-family:var(--mono);font-size:12px;color:var(--cyan);letter-spacing:1px}
+.ia-sub{font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:2px}
+.ia-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(30,58,74,.8)}
+.ia-row:last-child{border-bottom:none}
+.ia-label{font-family:var(--mono);font-size:10px;color:var(--text-dim)}
+.ia-val{font-family:var(--mono);font-size:11px;font-weight:700}
+.ia-val.g{color:var(--green)}.ia-val.y{color:var(--yellow)}.ia-val.r{color:var(--red)}.ia-val.b{color:var(--cyan)}
+.prob-bar{display:flex;align-items:center;gap:8px;margin-top:10px}
+.pb-track{flex:1;height:8px;background:#1e3a4a;border-radius:4px;overflow:hidden}
+.pb-fill{height:100%;border-radius:4px;transition:width .5s ease}
+.pb-fill.red{background:linear-gradient(90deg,var(--orange),var(--red))}
+.pb-fill.yellow{background:linear-gradient(90deg,#a8c030,var(--yellow))}
+.pb-lbl{font-family:var(--mono);font-size:10px;color:var(--text-dim);white-space:nowrap}
+
+/* INCIDENTS */
+.sh{display:flex;justify-content:space-between;align-items:center;margin:16px 14px 8px}
+.st{font-family:var(--mono);font-size:11px;color:var(--cyan);letter-spacing:1px}
+.sc2{font-family:var(--mono);font-size:10px;color:var(--text-dim)}
+.il{margin:0 14px}
+.ii{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;margin-bottom:8px;cursor:pointer;transition:border-color .2s}
+.ii:hover{border-color:var(--cyan-dim)}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot.a{background:var(--red);box-shadow:0 0 6px var(--red)}.dot.m{background:var(--yellow);box-shadow:0 0 6px var(--yellow)}.dot.b2{background:#a8c030;box-shadow:0 0 6px #a8c030}
+.iic{font-size:20px}
+.iin{flex:1;font-size:14px;font-weight:600;color:var(--text)}
+.iis{font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:2px}
+.sp{border-radius:20px;padding:4px 12px;font-family:var(--mono);font-size:11px;font-weight:700}
+.sp.a{background:rgba(255,59,59,.2);color:var(--red);border:1px solid rgba(255,59,59,.4)}
+.sp.m{background:rgba(245,197,66,.15);color:var(--yellow);border:1px solid rgba(245,197,66,.35)}
+.sp.b2{background:rgba(168,192,48,.15);color:#a8c030;border:1px solid rgba(168,192,48,.3)}
+
+/* VEGETACION */
+.vs{margin:14px}
+.vc{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px}
+.vch{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.vci{font-size:28px}
+.vct{font-size:14px;font-weight:700;color:var(--green)}
+.vcs{font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:2px}
+.vi{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)}
+.vi:last-child{border-bottom:none}
+.vii{font-size:22px;width:28px;text-align:center;flex-shrink:0}
+.vin{font-size:13px;font-weight:600;color:var(--text)}
+.vid{font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-top:2px}
+.vb{font-family:var(--mono);font-size:9px;border-radius:8px;padding:3px 8px;flex-shrink:0}
+.vb.o{background:rgba(57,255,126,.15);color:var(--green);border:1px solid rgba(57,255,126,.3)}
+.vb.m{background:rgba(245,197,66,.15);color:var(--yellow);border:1px solid rgba(245,197,66,.3)}
+.vb.n{background:rgba(255,59,59,.15);color:var(--red);border:1px solid rgba(255,59,59,.3)}
+.cb{margin:12px 14px 0;background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+.cbl{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:6px}
+.cr{display:flex;gap:8px;flex-wrap:wrap}
+.cp{background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);border-radius:20px;padding:4px 10px;font-family:var(--mono);font-size:10px;color:var(--cyan)}
+
+/* AGRICOLA */
+.ag-warn{margin:12px 14px 0;background:rgba(255,59,59,.06);border:1px solid rgba(255,59,59,.25);border-radius:14px;padding:14px}
+.ag-ok{margin:10px 14px 0;background:rgba(57,255,126,.06);border:1px solid rgba(57,255,126,.25);border-radius:14px;padding:14px}
+.ag-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.ag-icon{font-size:24px}
+.ag-title{font-size:13px;font-weight:700}
+.ag-title.r{color:var(--red)}.ag-title.g{color:var(--green)}
+.ag-body{font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:1.7;font-style:italic}
+.ag-crops{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.ag-crop{background:rgba(57,255,126,.1);border:1px solid rgba(57,255,126,.2);border-radius:10px;padding:6px 10px;text-align:center}
+.ag-crop .aci{font-size:20px;display:block}
+.ag-crop .acn{font-family:var(--mono);font-size:8px;color:var(--green);margin-top:2px}
+.pred-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 14px 0}
+.pred-card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px;text-align:center}
+.pred-card .pcv{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--cyan)}
+.pred-card .pcl{font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-top:4px;letter-spacing:.5px;line-height:1.4}
+
+/* BOTTOM GRID */
+.bg2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:10px 14px 0}
+.bc2{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:14px}
+.bclb{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:10px;line-height:1.4}
+.dw{position:relative;width:80px;height:80px;margin:0 auto}
+.ds{transform:rotate(-90deg)}
+.dt{fill:none;stroke:#1e3a4a;stroke-width:8}
+.df{fill:none;stroke:var(--cyan);stroke-width:8;stroke-linecap:round;stroke-dasharray:188;stroke-dashoffset:47;filter:drop-shadow(0 0 4px var(--cyan))}
+.dtx{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.dp{font-family:var(--mono);font-size:16px;color:var(--cyan);font-weight:700}
+.dl{font-family:var(--mono);font-size:7px;color:var(--text-dim);letter-spacing:.5px}
+.pr{display:flex;gap:6px;flex-wrap:wrap}
+.pri{text-align:center}
+.pric{font-size:20px;display:block}
+.prin{font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-top:2px}
+
+/* TECH (bombero) */
+.tg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 14px 0}
+.tc{background:var(--bg3);border:1px solid var(--border);border-radius:12px;padding:12px 8px;text-align:center}
+.tcv{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--cyan)}
+.tcl{font-family:var(--mono);font-size:8px;color:var(--text-dim);margin-top:4px;letter-spacing:.5px}
+
+/* SIMPLE */
+.sa2{margin:16px;background:rgba(255,59,59,.1);border:2px solid rgba(255,59,59,.4);border-radius:20px;padding:20px;text-align:center}
+.sai{font-size:56px;margin-bottom:8px}
+.sat{font-size:24px;font-weight:800;color:var(--orange);margin-bottom:6px}
+.sab{font-size:16px;color:var(--text);line-height:1.6}
+.sbtn{display:block;margin:12px 16px;padding:18px;border-radius:18px;font-size:18px;font-weight:800;border:none;cursor:pointer;text-align:center;transition:transform .15s;width:calc(100% - 32px)}
+.sbtn:active{transform:scale(.97)}
+.sbtn.g{background:var(--green);color:#0a1a10}.sbtn.b{background:var(--cyan);color:#0a1a20}
+.sw{margin:0 16px;background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:16px;text-align:center}
+.swt{font-size:40px;font-weight:800;color:var(--cyan);margin-bottom:4px}
+.swd{font-size:15px;color:var(--text-dim)}
+
+/* EVACUACION */
+.ec{border-radius:14px;padding:16px;margin:12px 14px 0}
+.ec.g{background:rgba(57,255,126,.07);border:1px solid rgba(57,255,126,.3)}
+.ec.y{background:rgba(245,197,66,.07);border:1px solid rgba(245,197,66,.3)}
+.ec.r{background:rgba(255,59,59,.07);border:1px solid rgba(255,59,59,.3)}
+.ecl{font-family:var(--mono);font-size:9px;color:var(--text-dim);letter-spacing:1px;margin-bottom:8px}
+.ect{font-size:16px;font-weight:800;margin-bottom:6px}
+.ect.g{color:var(--green)}.ect.y{color:var(--yellow)}
+.ecb{font-family:var(--mono);font-size:11px;color:var(--text-dim);line-height:1.7}
+
+/* ══ MAPA SVG NIÑO ══ */
+.kid-map{margin:14px;background:#081a28;border:1px solid var(--border);border-radius:16px;overflow:hidden;position:relative}
+.kid-map-title{font-family:var(--mono);font-size:10px;color:var(--cyan);letter-spacing:1px;padding:10px 14px 6px;border-bottom:1px solid var(--border)}
+.kid-map svg{display:block;width:100%;height:auto}
+/* Route animation */
+@keyframes dash{to{stroke-dashoffset:-20}}
+.route-line{stroke-dasharray:8 4;animation:dash 1s linear infinite}
+/* Legend */
+.kid-map-legend{display:flex;gap:12px;flex-wrap:wrap;padding:8px 14px 10px;border-top:1px solid var(--border)}
+.km-leg{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;color:var(--text-dim)}
+.km-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+
+/* ══ "NO PLANTAR" CON IMÁGENES ══ */
+.no-plant-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:10px 14px 0}
+.np-card{background:var(--bg3);border:2px solid rgba(255,59,59,.4);border-radius:14px;overflow:hidden;text-align:center;position:relative}
+.np-img{width:100%;aspect-ratio:1;object-fit:cover;display:block;font-size:0}
+.np-img-placeholder{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:42px;background:rgba(255,59,59,.08)}
+.np-label{font-family:var(--mono);font-size:9px;color:var(--text);padding:5px 4px 4px;font-weight:700}
+.np-sub{font-family:var(--mono);font-size:8px;color:var(--red);padding:0 4px 6px;line-height:1.3}
+.np-badge{position:absolute;top:6px;right:6px;background:var(--red);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;color:#fff}
+
+/* ══ SÍ PLANTAR (kid) ══ */
+.yes-plant-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:6px 14px 0}
+.yp-card{background:rgba(57,255,126,.07);border:2px solid rgba(57,255,126,.3);border-radius:14px;overflow:hidden;text-align:center}
+.yp-img-placeholder{width:100%;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:42px;background:rgba(57,255,126,.05)}
+.yp-label{font-family:var(--mono);font-size:9px;color:var(--green);padding:5px 4px 6px;font-weight:700}
+
+/* NAV */
+.nav{position:sticky;bottom:0;background:linear-gradient(0deg,#0a1520 80%,transparent);padding:12px 10px 20px;display:flex;justify-content:space-around;border-top:1px solid var(--border)}
+.nb2{background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--text-dim);font-family:var(--mono);font-size:7px;letter-spacing:.5px;transition:color .2s;padding:4px 6px}
+.nb2 .ni{font-size:18px}
+.nb2.active{color:var(--cyan)}
+.nb2:hover{color:var(--cyan)}
+
+/* MODAL */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:flex-end;justify-content:center}
+.mo.open{display:flex}
+.ms{width:100%;max-width:430px;background:#0e1f2d;border-top:2px solid var(--orange);border-radius:24px 24px 0 0;padding:20px 20px 40px;animation:su .3s ease;position:relative;max-height:80vh;overflow-y:auto}
+@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mh{width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px}
+.mt2{font-size:18px;font-weight:800;color:var(--orange);margin-bottom:8px}
+.mb2{font-family:var(--mono);font-size:11px;color:var(--text-dim);line-height:1.9;white-space:pre-line}
+.mc2{position:absolute;top:16px;right:16px;background:none;border:none;cursor:pointer;color:var(--text-dim);font-size:20px}
+.ma{margin-top:16px;background:var(--orange2);color:#fff;border:none;border-radius:12px;padding:12px;width:100%;font-family:var(--mono);font-size:12px;font-weight:700;cursor:pointer;transition:background .2s}
+.ma:hover{background:var(--orange)}
+</style>
+</head>
+<body>
+<div class="phone">
+
+<!-- ══ LOGIN ══ -->
+<div class="screen active" id="s-login">
+  <div class="ll">🔥</div>
+  <div class="lb">FIREWARN</div>
+  <div class="lt">INTELIGENCIA TERRITORIAL PREVENTIVA<br>REGIÓN DE ÑUBLE</div>
+  <div class="pl">¿QUIÉN ERES?</div>
+  <div class="pgrid">
+    <div class="pc" onclick="loginAs('ciudadano')"><div class="pi">🧑</div><div class="pn">CIUDADANO/A</div><div class="pd">Alertas, mapa y predicciones</div></div>
+    <div class="pc" onclick="loginAs('bombero')"><div class="pi">🚒</div><div class="pn">BOMBERO /<br>BRIGADISTA</div><div class="pd">Datos tácticos y sensores</div></div>
+    <div class="pc" onclick="loginAs('abuelo')"><div class="pi">👴</div><div class="pn">ADULTO MAYOR</div><div class="pd">Interfaz simple y clara</div></div>
+    <div class="pc" onclick="loginAs('nino')"><div class="pi">🧒</div><div class="pn">NIÑO / NIÑA</div><div class="pd">Pasos guiados y visual</div></div>
+  </div>
+  <div class="lv">FireWarn v5.0 · Universidad del Bío-Bío</div>
+</div>
+
+<!-- ══ CIUDADANO ══ -->
+<div class="screen" id="s-ciudadano">
+  <div class="topbar">
+    <div><div class="tb-title">FIREWARN REGIONAL</div><div class="tb-sub">PANEL DE CONTROL · ACTIVO</div></div>
+    <div style="display:flex;gap:10px;align-items:center">
+      <button class="ib" onclick="goScreen('s-login')">⬅</button>
+      <div class="nb" onclick="goScreen('s-alertas')">1</div>
+    </div>
+  </div>
+  <div class="scroll">
+    <div class="map">
+      <div class="mg"></div>
+      <div class="sl sa">SECTOR A</div><div class="sl sb">SECTOR B</div><div class="sl sc">SECTOR C</div>
+      <div class="ze z1"></div><div class="ze z2"></div>
+      <div class="fd f1" onclick="showM('inc-a')">🔥</div>
+      <div class="fd f2" onclick="showM('inc-b')">🔥</div>
+      <div class="fd f3" onclick="showM('inc-a')">🔥</div>
+      <div class="fd f4" onclick="showM('inc-a')">🔥</div>
+      <div class="fd f5" onclick="showM('inc-b')">🔥</div>
+      <div class="co">-36.61° / -72.10° · Ñuble</div>
+    </div>
+    <div class="ab" onclick="goScreen('s-alertas')">
+      <div><div class="al">ALERTAS TEMPRANAS · SISTEMA ACTIVO</div><div class="at">Alertas Rojas<br>de Incendio</div><div class="as">▶ 3 ZONAS CRÍTICAS DETECTADAS</div></div>
+      <div class="abg">⚠️ RIESGO<br>ALTO</div>
+    </div>
+    <div class="wc">
+      <div class="wi">Región de Ñuble · 29°C<br>Humedad: 18% · Viento: 25 km/h NE</div>
+      <div class="rp"><span style="font-size:16px">⚠️</span><span class="rl">RIESGO<br>ALTO</span></div>
+    </div>
+    <div class="ia-card">
+      <div class="ia-header"><div class="ia-icon">🤖</div><div><div class="ia-title">MOTOR PREDICTIVO · IA</div><div class="ia-sub">ANÁLISIS EN TIEMPO REAL</div></div></div>
+      <div class="ia-row"><span class="ia-label">Prob. propagación Sector A</span><span class="ia-val r">78%</span></div>
+      <div class="ia-row"><span class="ia-label">Dirección avance del fuego</span><span class="ia-val y">Suroeste</span></div>
+      <div class="ia-row"><span class="ia-label">Tiempo para alcanzar Sector C</span><span class="ia-val r">45 min</span></div>
+      <div class="ia-row"><span class="ia-label">Riesgo zona B (próximas 6h)</span><span class="ia-val y">MEDIO</span></div>
+      <div class="ia-row"><span class="ia-label">Sensores activos</span><span class="ia-val g">12 / 12</span></div>
+      <div style="margin-top:12px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim);margin-bottom:6px;letter-spacing:.5px">ÍNDICE DE RIESGO TERRITORIAL</div>
+        <div class="prob-bar"><div class="pb-track"><div class="pb-fill red" style="width:78%"></div></div><span class="pb-lbl">78 / 100</span></div>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tbb active" onclick="switchTab(this,'tc-inc')">INCIDENTES</button>
+      <button class="tbb" onclick="switchTab(this,'tc-fam')">FAMILIA</button>
+      <button class="tbb" onclick="switchTab(this,'tc-agr')">AGRÍCOLA</button>
+      <button class="tbb" onclick="switchTab(this,'tc-veg')">VEGETACIÓN</button>
+      <button class="tbb" onclick="switchTab(this,'tc-dat')">DATOS</button>
+    </div>
+    <div id="tc-inc">
+      <div class="mg2">
+        <div class="mc" onclick="showM('riesgo')"><div class="mlb">RIESGO INCENDIO</div><span class="mi">🔥</span><div class="mv g">BAJO</div></div>
+        <div class="mc"><div class="mlb">HUMEDAD SUELO</div><span class="mi">💧</span><div class="mv b">30%</div></div>
+      </div>
+      <div class="sh"><span class="st">INCIDENTES ACTUALES</span><span class="sc2">3 ACTIVOS</span></div>
+      <div class="il">
+        <div class="ii" onclick="showM('inc-a')"><div class="dot a"></div><div class="iic">🔥</div><div style="flex:1"><div class="iin">Incendio Sector A</div><div class="iis">Alta temperatura · Viento NE</div></div><div class="sp a">ALTA</div></div>
+        <div class="ii" onclick="showM('inc-b')"><div class="dot m"></div><div class="iic">🌊</div><div style="flex:1"><div class="iin">Inundación Sector B</div><div class="iis">Río Chillán +45cm</div></div><div class="sp m">MEDIA</div></div>
+        <div class="ii" onclick="showM('inc-c')"><div class="dot b2"></div><div class="iic">🏔️</div><div style="flex:1"><div class="iin">Deslizamiento Sector C</div><div class="iis">Suelo saturado 82%</div></div><div class="sp b2">BAJA</div></div>
+      </div>
+      <div class="bg2">
+        <div class="bc2"><div class="bclb">HISTORIAL<br>INCIDENTES</div><div class="dw"><svg class="ds" width="80" height="80" viewBox="0 0 80 80"><circle class="dt" cx="40" cy="40" r="30"/><circle class="df" cx="40" cy="40" r="30"/></svg><div class="dtx"><span class="dp">75%</span><span class="dl">RESOLUCIÓN</span></div></div></div>
+        <div class="bc2"><div class="bclb">VEGETACIÓN<br>RECOMENDADA</div><div style="font-size:13px;font-weight:700;color:var(--green);margin-bottom:6px">Suelo Óptimo</div><div class="pr"><div class="pri"><span class="pric">🌳</span><span class="prin">Quillay</span></div><div class="pri"><span class="pric">🌲</span><span class="prin">Peumo</span></div><div class="pri"><span class="pric">🍃</span><span class="prin">Boldo</span></div></div></div>
+      </div>
+    </div>
+    <div id="tc-fam" style="display:none">
+      <div class="fam-card">
+        <div class="fam-header"><span class="fam-title">👨‍👩‍👧‍👦 RED FAMILIAR</span><span style="font-family:var(--mono);font-size:9px;color:var(--green)">3 VINCULADOS</span></div>
+        <div class="fam-member"><div class="fam-avatar">👴</div><div class="fam-info"><div class="fam-name">Abuelo Jorge</div><div class="fam-status safe">● EN ZONA SEGURA</div><div class="fam-loc">📍 Estadio Municipal · hace 5 min</div></div><div class="fam-ping">PING</div></div>
+        <div class="fam-member"><div class="fam-avatar">🧒</div><div class="fam-info"><div class="fam-name">Sofía (niña)</div><div class="fam-status warn">⚠ EN MOVIMIENTO</div><div class="fam-loc">📍 Sector B → Norte · hace 2 min</div></div><div class="fam-ping">PING</div></div>
+        <div class="fam-member"><div class="fam-avatar">👶</div><div class="fam-info"><div class="fam-name">Bebé (8 meses)</div><div class="fam-status unk">◌ SIN SEÑAL GPS</div><div class="fam-loc">Última señal: hace 14 min</div></div><div class="fam-ping" style="color:var(--red);border-color:rgba(255,59,59,.4);background:rgba(255,59,59,.1)">SOS</div></div>
+      </div>
+      <div class="evac-assist" onclick="showM('evac-asistida')">
+        <div class="ea-header"><div class="ea-icon">♿</div><div><div class="ea-title">EVACUACIÓN ASISTIDA · IA</div></div></div>
+        <div class="ea-sub">Activa si te movilizas con bebés, adultos mayores o personas con movilidad reducida. La IA recalcula la ruta priorizando caminos pavimentados y transporte de emergencia.</div>
+        <div class="ea-tags"><div class="ea-tag">👶 Con bebé</div><div class="ea-tag">♿ Movilidad reducida</div><div class="ea-tag">👴 Adulto mayor</div></div>
+      </div>
+      <div style="margin:10px 14px 0;background:rgba(57,255,126,.06);border:1px solid rgba(57,255,126,.2);border-radius:12px;padding:12px">
+        <div style="font-family:var(--mono);font-size:9px;color:var(--green);letter-spacing:1px;margin-bottom:6px">🤖 IA · RUTA ASISTIDA SUGERIDA</div>
+        <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:1.7">Ruta Norte pavimentada (12 km)<br>✓ Sin escalones · Acceso silla de ruedas<br>✓ Bus de emergencia en Av. O'Higgins<br>✓ Personal médico en Punto A</div>
+      </div>
+    </div>
+    <div id="tc-agr" style="display:none">
+      <div class="ag-warn">
+        <div class="ag-head"><div class="ag-icon">🚫</div><div><div class="ag-title r">QUÉ NO PLANTAR</div></div></div>
+        <div class="ag-body">"No se recomienda plantar frutillas en este sector debido a la baja humedad del suelo (30%) y a las altas temperaturas previstas para la temporada."</div>
+        <div style="margin-top:8px">
+          <div class="vi" style="border:none;padding:6px 0"><div class="vii">🍓</div><div><div class="vin">Frutilla</div><div class="vid">Requiere humedad &gt;60% · No apta</div></div><div class="vb n">NO APTA</div></div>
+          <div class="vi" style="border:none;padding:6px 0"><div class="vii">🥦</div><div><div class="vin">Brócoli</div><div class="vid">Temperatura demasiado alta</div></div><div class="vb n">NO APTA</div></div>
+          <div class="vi" style="border:none;padding:6px 0"><div class="vii">🥬</div><div><div class="vin">Lechuga</div><div class="vid">Se quema con 29°C+</div></div><div class="vb n">NO APTA</div></div>
+        </div>
+      </div>
+      <div class="ag-ok">
+        <div class="ag-head"><div class="ag-icon">✅</div><div><div class="ag-title g">QUÉ SÍ PLANTAR</div></div></div>
+        <div class="ag-body">"Las condiciones actuales favorecen el cultivo de melón, sandía y zapallo."</div>
+        <div class="ag-crops">
+          <div class="ag-crop"><span class="aci">🍈</span><span class="acn">Melón</span></div>
+          <div class="ag-crop"><span class="aci">🍉</span><span class="acn">Sandía</span></div>
+          <div class="ag-crop"><span class="aci">🎃</span><span class="acn">Zapallo</span></div>
+          <div class="ag-crop"><span class="aci">🍅</span><span class="acn">Tomate</span></div>
+          <div class="ag-crop"><span class="aci">🫑</span><span class="acn">Pimiento</span></div>
+          <div class="ag-crop"><span class="aci">🧅</span><span class="acn">Cebolla</span></div>
+          <div class="ag-crop"><span class="aci">🍇</span><span class="acn">Vid</span></div>
+        </div>
+      </div>
+      <div class="sh"><span class="st">PREDICCIÓN AGRÍCOLA</span></div>
+      <div class="pred-grid">
+        <div class="pred-card"><div class="pcv" style="color:var(--green)">87%</div><div class="pcl">PROB. ÉXITO<br>CULTIVO</div></div>
+        <div class="pred-card"><div class="pcv">4.2 ton</div><div class="pcl">RENDIMIENTO<br>ESPERADO</div></div>
+        <div class="pred-card"><div class="pcv" style="color:var(--yellow)">3.5 m³</div><div class="pcl">CONSUMO<br>AGUA/HA</div></div>
+        <div class="pred-card"><div class="pcv">Mar 15</div><div class="pcl">FECHA APROX.<br>COSECHA</div></div>
+        <div class="pred-card"><div class="pcv" style="color:var(--orange)">22%</div><div class="pcl">RIESGO<br>PÉRD. SEQUÍA</div></div>
+        <div class="pred-card"><div class="pcv" style="color:var(--green)">ALTO</div><div class="pcl">OPTIMISMO<br>PRODUCTIVO</div></div>
+      </div>
+      <div class="sh" style="margin-top:4px"><span class="st">🐄 MÓDULO GANADERO</span></div>
+      <div class="gan-alert">
+        <div class="gan-header"><div class="gan-icon">🐄</div><div><div class="gan-title">PROTOCOLO EMERGENCIA GANADERO</div><div class="gan-sub">🤖 IA · ANÁLISIS DE IMPACTO EN FAUNA</div></div></div>
+        <div class="gan-item"><div class="gan-emoji">🐄</div><div class="gan-text"><div class="gan-name">Movimiento de bovinos</div><div class="gan-detail">Mover ganado hacia cortafuego norte (Sector D).<br>Ruta: Camino El Sauce → Potrero 3. ETA: 20 min.</div></div><div class="gan-badge r">URGENTE</div></div>
+        <div class="gan-item"><div class="gan-emoji">🐑</div><div class="gan-text"><div class="gan-name">Ovinos y caprinos</div><div class="gan-detail">Zona segura: Quebrada Los Boldos.<br>Agua disponible en estanque norte.</div></div><div class="gan-badge y">PRECAUCIÓN</div></div>
+        <div class="gan-item"><div class="gan-emoji">💧</div><div class="gan-text"><div class="gan-name">Fuentes de agua seguras</div><div class="gan-detail">Estanque Norte (Sector D): apto.<br>Río Chillán km 8: NO usar (humo contaminante).</div></div><div class="gan-badge g">DISPONIBLE</div></div>
+        <div class="gan-item"><div class="gan-emoji">🌾</div><div class="gan-text"><div class="gan-name">Suplemento alimenticio emergencia</div><div class="gan-detail">🤖 IA: Pasturas afectadas por humo.<br>Recomendar heno seco + sales minerales.<br>Evitar pastoreo en Sector A por 48h.</div></div><div class="gan-badge y">IA SUGIERE</div></div>
+      </div>
+    </div>
+    <div id="tc-veg" style="display:none">
+      <div class="cb"><div class="cbl">CONDICIONES ACTUALES DEL SUELO</div><div class="cr"><div class="cp">🌡️ 29°C</div><div class="cp">💧 30% Humedad</div><div class="cp">☀️ Seco</div><div class="cp">💨 25 km/h</div></div></div>
+      <div class="vs">
+        <div class="vc">
+          <div class="vch"><div class="vci">⚠️</div><div><div class="vct" style="color:var(--red)">Vegetación de Alto Riesgo</div><div class="vcs">DETECTADA EN ZONA · REMOVER O GESTIONAR</div></div></div>
+          <div class="vi"><div class="vii">🌿</div><div style="flex:1"><div class="vin">Pastizal seco</div><div class="vid">Alta inflamabilidad · Propagación rápida</div></div><div class="vb n">RIESGO</div></div>
+          <div class="vi"><div class="vii">🌾</div><div style="flex:1"><div class="vin">Eucalipto</div><div class="vid">Aceites volátiles · Propaga fuego</div></div><div class="vb n">RIESGO</div></div>
+          <div class="vi"><div class="vii">🪵</div><div style="flex:1"><div class="vin">Pino radiata</div><div class="vid">Resina inflamable · Suelo acidificado</div></div><div class="vb m">PRECAUCIÓN</div></div>
+        </div>
+        <div class="vc">
+          <div class="vch"><div class="vci">🌳</div><div><div class="vct">Vegetación Nativa Recomendada</div><div class="vcs">CORTAFUEGO NATURAL · REFORESTAR</div></div></div>
+          <div class="vi"><div class="vii">🌳</div><div style="flex:1"><div class="vin">Quillay</div><div class="vid">Resistente sequía · Retiene suelo</div></div><div class="vb o">ÓPTIMO</div></div>
+          <div class="vi"><div class="vii">🌲</div><div style="flex:1"><div class="vin">Peumo</div><div class="vid">Zona media · Clima mediterráneo</div></div><div class="vb o">ÓPTIMO</div></div>
+          <div class="vi"><div class="vii">🍃</div><div style="flex:1"><div class="vin">Boldo</div><div class="vid">Suelo arcilloso · Nativo chileno</div></div><div class="vb o">ÓPTIMO</div></div>
+          <div class="vi"><div class="vii">🌿</div><div style="flex:1"><div class="vin">Litre</div><div class="vid">Barrera natural anti-propagación</div></div><div class="vb m">VIABLE</div></div>
+        </div>
+      </div>
+    </div>
+    <div id="tc-dat" style="display:none;margin:14px">
+      <div class="mc" style="margin-bottom:10px"><div class="mlb">TEMPERATURA AMBIENTAL</div><span class="mi">🌡️</span><div class="mv o">29°C</div></div>
+      <div class="mc" style="margin-bottom:10px"><div class="mlb">VELOCIDAD VIENTO</div><span class="mi">💨</span><div class="mv b">25 km/h NE</div></div>
+      <div class="mc" style="margin-bottom:10px"><div class="mlb">HUMEDAD RELATIVA</div><span class="mi">💧</span><div class="mv b">18%</div></div>
+      <div class="mc"><div class="mlb">RED SENSORES IoT (LoRaWAN)</div><span class="mi">📡</span><div class="mv g">12 / 12 ACTIVOS</div></div>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="nb2 active" onclick="sa(this)"><span class="ni">🗺️</span>MAPA</button>
+    <button class="nb2" onclick="sa(this);goScreen('s-alertas')"><span class="ni">🔔</span>ALERTAS</button>
+    <button class="nb2" onclick="sa(this);goScreen('s-evacuacion')"><span class="ni">🚶</span>EVACUAR</button>
+    <button class="nb2" onclick="sa(this);goScreen('s-login')"><span class="ni">👤</span>PERFIL</button>
+  </div>
+  <div class="mo" id="mo-c" onclick="cm('mo-c')">
+    <div class="ms" onclick="event.stopPropagation()">
+      <div class="mh"></div>
+      <button class="mc2" onclick="cm('mo-c')">✕</button>
+      <div class="mt2" id="mo-c-t"></div>
+      <div class="mb2" id="mo-c-b"></div>
+      <button class="ma" onclick="cm('mo-c')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BOMBERO ══ -->
+<div class="screen" id="s-bombero">
+  <div class="topbar">
+    <div><div class="tb-title">🚒 MODO BOMBERO</div><div class="tb-sub">DATOS TÁCTICOS · ACCESO COMPLETO</div></div>
+    <button class="ib" onclick="goScreen('s-login')">⬅</button>
+  </div>
+  <div class="scroll">
+    <div class="map">
+      <div class="mg"></div>
+      <div class="sl sa">SECTOR A</div><div class="sl sb">SECTOR B</div><div class="sl sc">SECTOR C</div>
+      <div class="ze z1"></div><div class="ze z2"></div>
+      <div class="fd f1" onclick="showM('b-a')">🔥</div><div class="fd f2" onclick="showM('b-b')">🔥</div>
+      <div class="fd f3" onclick="showM('b-a')">🔥</div><div class="fd f4" onclick="showM('b-a')">🔥</div><div class="fd f5" onclick="showM('b-b')">🔥</div>
+      <div class="co">-36.61° / -72.10° · FWI: 42</div>
+    </div>
+    <div class="tg">
+      <div class="tc"><div class="tcv">42</div><div class="tcl">FWI INDEX</div></div>
+      <div class="tc"><div class="tcv">18%</div><div class="tcl">HUMEDAD</div></div>
+      <div class="tc"><div class="tcv">25km/h</div><div class="tcl">VIENTO NE</div></div>
+      <div class="tc"><div class="tcv" style="color:var(--red)">3</div><div class="tcl">FOCOS</div></div>
+      <div class="tc"><div class="tcv" style="color:var(--green)">12/12</div><div class="tcl">SENSORES</div></div>
+      <div class="tc"><div class="tcv">ESP32</div><div class="tcl">HW NODE</div></div>
+    </div>
+    <div class="ia-card" style="margin-top:10px">
+      <div class="ia-header"><div class="ia-icon">🤖</div><div><div class="ia-title">PREDICCIÓN IA · TÁCTICA</div><div class="ia-sub">APOYO TOMA DE DECISIONES</div></div></div>
+      <div class="ia-row"><span class="ia-label">Prob. propagación</span><span class="ia-val r">78% → Sector C</span></div>
+      <div class="ia-row"><span class="ia-label">Tiempo estimado avance</span><span class="ia-val r">45 min</span></div>
+      <div class="ia-row"><span class="ia-label">Dirección del viento</span><span class="ia-val b">NE → SO</span></div>
+      <div class="ia-row"><span class="ia-label">Zona prioritaria</span><span class="ia-val r">SECTOR A · FOCO 1</span></div>
+      <div class="ia-row"><span class="ia-label">Unidades recomendadas</span><span class="ia-val y">3 camiones + 1 helicóptero</span></div>
+      <div class="prob-bar" style="margin-top:10px"><div class="pb-track"><div class="pb-fill red" style="width:78%"></div></div><span class="pb-lbl">Riesgo 78/100</span></div>
+    </div>
+    <div class="sh"><span class="st">INCIDENTES · COORDENADAS</span><span class="sc2">3 ACTIVOS</span></div>
+    <div class="il">
+      <div class="ii" onclick="showM('b-a')"><div class="dot a"></div><div class="iic">🔥</div><div style="flex:1"><div class="iin">Incendio Sector A</div><div class="iis">-36.624° / -72.115° · T:34°C · CO:0.4ppm</div></div><div class="sp a">ALTA</div></div>
+      <div class="ii" onclick="showM('b-b')"><div class="dot m"></div><div class="iic">🌊</div><div style="flex:1"><div class="iin">Inundación Sector B</div><div class="iis">-36.601° / -72.091° · +45cm · 320m³/s</div></div><div class="sp m">MEDIA</div></div>
+      <div class="ii" onclick="showM('b-c')"><div class="dot b2"></div><div class="iic">🏔️</div><div style="flex:1"><div class="iin">Deslizamiento Sector C</div><div class="iis">-36.589° / -72.103° · Suelo 82%</div></div><div class="sp b2">BAJA</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tbb active" onclick="switchTab(this,'tb-rec')">RECURSOS</button>
+      <button class="tbb" onclick="switchTab(this,'tb-sen')">SENSORES IoT</button>
+      <button class="tbb" onclick="switchTab(this,'tb-veg')">VEG. CORTAFUEGO</button>
+      <button class="tbb" onclick="switchTab(this,'tb-off')">🔴 RED / OFFLINE</button>
+      <button class="tbb" onclick="switchTab(this,'tb-cn')">CAJA NEGRA</button>
+    </div>
+    <div id="tb-rec" style="margin:12px 14px 0">
+      <div class="mc" style="margin-bottom:10px"><div class="mlb">UNIDADES DISPONIBLES</div><span class="mi">🚒</span><div class="mv g">4 ACTIVAS</div></div>
+      <div class="mc" style="margin-bottom:10px"><div class="mlb">TIEMPO RESPUESTA PROM.</div><span class="mi">⏱️</span><div class="mv b">8.3 MIN</div></div>
+      <div class="mc"><div class="mlb">ZONAS DE SEGURIDAD ACTIVAS</div><span class="mi">🏟️</span><div class="mv g">3 HABILITADAS</div></div>
+    </div>
+    <div id="tb-sen" style="display:none;margin:12px 14px 0">
+      <div class="mc" style="margin-bottom:10px"><div class="mlb">NODE-01 · SECTOR A (ESP32)</div><span class="mi">📡</span><div class="mv o" style="font-size:14px">T:34°C · H:15% · CO:0.4ppm · Viento:30km/h</div></div>
+      <div class="mc" style="margin-bottom:10px"><div class="mlb">NODE-02 · SECTOR B (ESP32)</div><span class="mi">📡</span><div class="mv b" style="font-size:14px">T:27°C · H:42% · CO:0.1ppm · Nivel+45cm</div></div>
+      <div class="mc"><div class="mlb">NODE-03 · SECTOR C (ESP32)</div><span class="mi">📡</span><div class="mv g" style="font-size:14px">T:25°C · H:52% · CO:0.0ppm · Suelo:82%</div></div>
+    </div>
+    <div id="tb-veg" style="display:none">
+      <div class="vs">
+        <div class="vc">
+          <div class="vch"><div class="vci">🌳</div><div><div class="vct">Cortafuego Natural · Post-Incendio</div><div class="vcs">REFORESTAR CON PRIORIDAD</div></div></div>
+          <div class="vi"><div class="vii">🌳</div><div style="flex:1"><div class="vin">Quillay (Quillaja saponaria)</div><div class="vid">Alta resistencia al fuego · Raíz profunda</div></div><div class="vb o">PRIORIDAD</div></div>
+          <div class="vi"><div class="vii">🪨</div><div style="flex:1"><div class="vin">Cactáceas nativas</div><div class="vid">Zona xerófita · No propaga llamas</div></div><div class="vb o">PRIORIDAD</div></div>
+          <div class="vi"><div class="vii">🌿</div><div style="flex:1"><div class="vin">Gramíneas bajas</div><div class="vid">Cobertura suelo · Reduce propagación</div></div><div class="vb m">VIABLE</div></div>
+        </div>
+      </div>
+    </div>
+    <div id="tb-off" style="display:none">
+      <div class="offline-toggle">
+        <div class="ot-header">
+          <span class="ot-title">SIMULADOR RED MESH</span>
+          <div class="toggle-wrap">
+            <span class="toggle-label" id="off-label">ONLINE</span>
+            <label class="toggle-sw">
+              <input type="checkbox" id="off-toggle" onchange="toggleOffline(this)">
+              <div class="toggle-track"></div>
+              <div class="toggle-knob"></div>
+            </label>
+          </div>
+        </div>
+        <div class="ot-body">Simula caída de red de telecomunicaciones. Al activar, el sistema demuestra que continúa operando mediante red LoRaWAN directamente desde los sensores ESP32 por radiofrecuencia, sin internet.</div>
+        <div class="offline-panel" id="offline-panel">
+          <div class="op-title">⚠ MODO OFFLINE · LoRaWAN ACTIVO</div>
+          <div class="op-row"><span class="op-label">Internet / 4G</span><span style="color:var(--red);font-family:var(--mono);font-size:10px">✗ SIN SEÑAL</span></div>
+          <div class="op-row"><span class="op-label">Red LoRaWAN</span><span class="op-val">✓ ACTIVA · 868 MHz</span></div>
+          <div class="op-row"><span class="op-label">Sensores ESP32 conectados</span><span class="op-val">12 / 12</span></div>
+          <div class="op-row"><span class="op-label">Frecuencia actualización</span><span class="op-val">cada 30 seg</span></div>
+          <div class="op-row"><span class="op-label">Datos críticos recibidos</span><span class="op-val">✓ NORMAL</span></div>
+          <div class="op-row"><span class="op-label">Alertas funcionando</span><span class="op-val">✓ SÍ · Modo local</span></div>
+          <div class="op-warn">⚠ Sin internet: mapa satelital no disponible. Datos de sensores y alertas operativos.</div>
+        </div>
+      </div>
+      <div class="sh"><span class="st">🗺️ PUNTOS CRÍTICOS · VÍAS</span></div>
+      <div class="mapa-alerts">
+        <div class="ma-item" onclick="showM('ruta148')"><div class="mai">🚗</div><div class="man"><div class="manm">Ruta 148 · km 23</div><div class="mad">Embotellamiento severo · 400+ vehículos</div></div><div class="ma-pill r">COLAPSADA</div></div>
+        <div class="ma-item" onclick="showM('puente')"><div class="mai">🌉</div><div class="man"><div class="manm">Puente Río Chillán</div><div class="mad">Tráfico moderado · Paso lento</div></div><div class="ma-pill y">LENTO</div></div>
+        <div class="ma-item"><div class="mai">🛣️</div><div class="man"><div class="manm">Ruta 5 Norte · acceso</div><div class="mad">Flujo normal · Recomendada</div></div><div class="ma-pill g">LIBRE</div></div>
+      </div>
+      <div class="alt-route">
+        <div class="ar-label">🤖 IA · RUTA DE VACIADO ALTERNATIVA</div>
+        <div class="ar-body">Camino El Rodeo (no pavimentado) → Empalme Los Robles → Ruta 5 Norte. Solo residentes locales lo conocen. ETA: +8 min vs ruta principal, pero SIN congestión.<br><br>⚠ Apto vehículos doble tracción.</div>
+      </div>
+    </div>
+    <div id="tb-cn" style="display:none">
+      <div class="cn-card">
+        <div class="cn-header"><div class="cn-icon">📦</div><div><div class="cn-title">CAJA NEGRA · POST-INCIDENTE</div><div class="cn-sub">INCENDIO SECTOR A · RESUELTO 18:45 HRS</div></div></div>
+        <div class="cn-stat"><span class="cn-label">Hectáreas salvadas (alerta temprana)</span><span class="cn-val g">340 há</span></div>
+        <div class="cn-stat"><span class="cn-label">Hectáreas afectadas</span><span class="cn-val y">47 há</span></div>
+        <div class="cn-stat"><span class="cn-label">Tiempo detección → alerta</span><span class="cn-val b">3 min 12 seg</span></div>
+        <div class="cn-stat"><span class="cn-label">Tiempo alerta → respuesta brigada</span><span class="cn-val b">8 min 44 seg</span></div>
+        <div class="cn-stat"><span class="cn-label">Personas evacuadas</span><span class="cn-val g">312</span></div>
+        <div class="cn-stat"><span class="cn-label">Heridos</span><span class="cn-val g">0</span></div>
+        <div class="cn-stat"><span class="cn-label">Sensores operativos durante evento</span><span class="cn-val g">12 / 12</span></div>
+        <div class="cn-stat"><span class="cn-label">Predicción IA vs realidad</span><span class="cn-val g">92% precisión</span></div>
+        <div class="cn-rec">
+          <div class="cn-rec-label">🤖 IA · RECOMENDACIÓN POST-INCENDIO</div>
+          <div class="cn-rec-body">Reforestar cicatriz del fuego (47 há) con:<br><br>🌳 Quillay — Prioritario. Raíz profunda, evita erosión.<br>🌲 Peumo — Zona media. Restauración nativa.<br>🍃 Boldo — Suelo arcilloso-arenoso.<br><br>⚠ No plantar en los próximos 30 días. Esperar análisis de suelo post-quema.<br><br>Riesgo de erosión sin cobertura: ALTO. Actuar antes de lluvias de otoño.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <!-- FIXED MODAL BOMBERO (was broken before) -->
+  <div class="mo" id="mo-b" onclick="cm('mo-b')">
+    <div class="ms" onclick="event.stopPropagation()">
+      <div class="mh"></div>
+      <button class="mc2" onclick="cm('mo-b')">✕</button>
+      <div class="mt2" id="mo-b-t"></div>
+      <div class="mb2" id="mo-b-b"></div>
+      <button class="ma" onclick="cm('mo-b')">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADULTO MAYOR ══ -->
+<div class="screen" id="s-abuelo">
+  <div class="topbar">
+    <div><div class="tb-title" style="font-size:18px">¡HOLA! 👴</div><div class="tb-sub">FIREWARN · TU SISTEMA DE ALERTAS</div></div>
+    <button class="ib" onclick="goScreen('s-login')">⬅</button>
+  </div>
+  <div class="scroll">
+    <div class="sa2"><div class="sai">🔥</div><div class="sat">¡HAY UN INCENDIO CERCA!</div><div class="sab">El Sector A está en peligro.<br>Mantente alejado y sigue<br>las instrucciones.</div></div>
+    <button class="sbtn g" onclick="goScreen('s-evacuacion')">🚶 VER CÓMO SALIR</button>
+    <button class="sbtn b">📞 LLAMAR AL 132</button>
+    <div class="sw"><div class="swt">29°C ☀️</div><div class="swd">Hace mucho calor hoy<br>Viento fuerte · Peligro de incendio</div></div>
+    <div style="margin:14px">
+      <div style="font-family:var(--mono);font-size:13px;color:var(--cyan);margin-bottom:10px">🌱 ¿QUÉ PUEDO PLANTAR?</div>
+      <div class="vc">
+        <div class="vi"><div class="vii">🍅</div><div style="flex:1"><div class="vin" style="font-size:16px">Tomate</div><div class="vid" style="font-size:12px">¡Crece muy bien con este calor!</div></div><div class="vb o">✅</div></div>
+        <div class="vi"><div class="vii">🍈</div><div style="flex:1"><div class="vin" style="font-size:16px">Melón</div><div class="vid" style="font-size:12px">Perfecto para el verano</div></div><div class="vb o">✅</div></div>
+        <div class="vi"><div class="vii">🧅</div><div style="flex:1"><div class="vin" style="font-size:16px">Cebolla</div><div class="vid" style="font-size:12px">Aguanta bien sin mucha agua</div></div><div class="vb o">✅</div></div>
+        <div class="vi"><div class="vii">🌳</div><div style="flex:1"><div class="vin" style="font-size:16px">Quillay</div><div class="vid" style="font-size:12px">Árbol chileno que protege el suelo</div></div><div class="vb o">✅</div></div>
+      </div>
+      <div style="margin-top:10px;font-family:var(--mono);font-size:12px;color:var(--red)">❌ NO plantar ahora: Frutillas, brócoli, lechuga</div>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="nb2 active" onclick="sa(this)"><span class="ni">🏠</span>INICIO</button>
+    <button class="nb2" onclick="sa(this);goScreen('s-alertas')"><span class="ni">🔔</span>ALERTAS</button>
+    <button class="nb2" onclick="sa(this);goScreen('s-evacuacion')"><span class="ni">🚶</span>SALIR</button>
+    <button class="nb2" onclick="sa(this);goScreen('s-login')"><span class="ni">👤</span>VOLVER</button>
+  </div>
+</div>
+
+<!-- ══ NIÑO ══ -->
+<div class="screen" id="s-nino">
+  <div class="topbar">
+    <div><div class="tb-title" style="font-size:18px">¡HOLA! 🧒</div><div class="tb-sub">FIREWARN · ¡TU APP DE SEGURIDAD!</div></div>
+    <button class="ib" onclick="goScreen('s-login')">⬅</button>
+  </div>
+  <div class="scroll">
+    <div class="sa2" style="background:rgba(255,107,0,.1);border-color:rgba(255,107,0,.4)"><div class="sai">🚨</div><div class="sat">¡PELIGRO!<br>¡HAY FUEGO!</div><div class="sab">No te asustes.<br>Sigue los pasos de abajo<br>con un adulto.</div></div>
+    <div style="margin:14px">
+      <div style="font-family:var(--mono);font-size:13px;color:var(--cyan);margin-bottom:10px;letter-spacing:1px">📋 PASOS A SEGUIR</div>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:14px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border)"><span style="font-size:28px">1️⃣</span><div><div style="font-size:15px;font-weight:700">Busca a un adulto</div><div style="font-size:12px;color:var(--text-dim)">Papá, mamá, o un vecino</div></div></div>
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border)"><span style="font-size:28px">2️⃣</span><div><div style="font-size:15px;font-weight:700">Sal de la casa</div><div style="font-size:12px;color:var(--text-dim)">No lleves muchas cosas</div></div></div>
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-bottom:1px solid var(--border)"><span style="font-size:28px">3️⃣</span><div><div style="font-size:15px;font-weight:700">Ve al lugar seguro</div><div style="font-size:12px;color:var(--text-dim)">📍 Estadio Municipal</div></div></div>
+        <div style="display:flex;align-items:center;gap:14px;padding:14px 16px"><span style="font-size:28px">4️⃣</span><div><div style="font-size:15px;font-weight:700">Llama al 132</div><div style="font-size:12px;color:var(--text-dim)">Son los bomberos, te ayudan</div></div></div>
+      </div>
+    </div>
+
+    <!-- MAPA DE EVACUACIÓN PARA NIÑOS (SVG interactivo) -->
+    <div class="kid-map">
+      <div class="kid-map-title">🗺️ ¿CÓMO LLEGAR AL LUGAR SEGURO?</div>
+      <svg viewBox="0 0 340 240" xmlns="http://www.w3.org/2000/svg" style="padding:8px">
+        <!-- Background streets -->
+        <rect width="340" height="240" fill="#081218"/>
+        <!-- Street grid -->
+        <line x1="0" y1="120" x2="340" y2="120" stroke="#1e3a4a" stroke-width="16"/>
+        <line x1="170" y1="0" x2="170" y2="240" stroke="#1e3a4a" stroke-width="12"/>
+        <line x1="0" y1="60" x2="340" y2="60" stroke="#1e3a4a" stroke-width="8"/>
+        <line x1="80" y1="0" x2="80" y2="240" stroke="#1e3a4a" stroke-width="8"/>
+        <line x1="260" y1="0" x2="260" y2="240" stroke="#1e3a4a" stroke-width="8"/>
+        <!-- Street labels -->
+        <text x="170" y="116" text-anchor="middle" fill="#3a6a80" font-size="7" font-family="monospace">AV. O'HIGGINS</text>
+        <text x="82" y="56" fill="#3a6a80" font-size="6" font-family="monospace" transform="rotate(-90,82,56)" text-anchor="middle">MAIPÚ</text>
+
+        <!-- FIRE ZONE (red, bottom-left) -->
+        <ellipse cx="60" cy="185" rx="55" ry="40" fill="rgba(255,59,59,0.18)" stroke="rgba(255,59,59,0.5)" stroke-width="1.5"/>
+        <text x="60" y="182" text-anchor="middle" font-size="22">🔥</text>
+        <text x="60" y="198" text-anchor="middle" fill="#ff3b3b" font-size="8" font-family="monospace">FUEGO</text>
+        <text x="60" y="208" text-anchor="middle" fill="#ff3b3b" font-size="7" font-family="monospace">SECTOR A</text>
+
+        <!-- YOUR HOUSE (center-bottom) -->
+        <rect x="150" y="148" width="22" height="20" rx="3" fill="#162a3a" stroke="#00d4ff" stroke-width="2"/>
+        <polygon points="150,150 172,150 161,140" fill="#00a8cc"/>
+        <text x="161" y="182" text-anchor="middle" fill="#00d4ff" font-size="8" font-family="monospace">TU CASA</text>
+
+        <!-- ROUTE: animated dashed line from house to stadium -->
+        <polyline points="161,148 161,120 170,120 170,50 220,50 220,30 285,30" 
+          fill="none" stroke="#39ff7e" stroke-width="3.5" stroke-linecap="round"
+          class="route-line"/>
+        <!-- Arrow at end of route -->
+        <polygon points="285,26 295,30 285,34" fill="#39ff7e"/>
+
+        <!-- SAFE ZONES -->
+        <!-- Stadium -->
+        <rect x="296" y="18" width="36" height="24" rx="4" fill="rgba(57,255,126,0.15)" stroke="#39ff7e" stroke-width="2"/>
+        <text x="314" y="27" text-anchor="middle" font-size="11">🏟️</text>
+        <text x="314" y="38" text-anchor="middle" fill="#39ff7e" font-size="6.5" font-family="monospace">ESTADIO</text>
+
+        <!-- Secondary route to Liceo -->
+        <polyline points="161,148 161,120 80,120 80,60 130,60"
+          fill="none" stroke="#f5c542" stroke-width="2" stroke-dasharray="5,3" opacity="0.6"/>
+        <!-- Liceo -->
+        <rect x="132" y="48" width="34" height="20" rx="4" fill="rgba(245,197,66,0.15)" stroke="#f5c542" stroke-width="1.5"/>
+        <text x="149" y="58" text-anchor="middle" font-size="9">🏫</text>
+        <text x="149" y="66" text-anchor="middle" fill="#f5c542" font-size="6" font-family="monospace">LICEO</text>
+
+        <!-- Plaza -->
+        <polyline points="161,148 260,148 260,120 260,80"
+          fill="none" stroke="#f5c542" stroke-width="2" stroke-dasharray="5,3" opacity="0.5"/>
+        <rect x="242" y="66" width="34" height="20" rx="4" fill="rgba(245,197,66,0.12)" stroke="#f5c542" stroke-width="1.5"/>
+        <text x="259" y="76" text-anchor="middle" font-size="9">⛲</text>
+        <text x="259" y="84" text-anchor="middle" fill="#f5c542" font-size="6" font-family="monospace">PLAZA</text>
+
+        <!-- Direction indicators -->
+        <text x="170" y="12" text-anchor="middle" fill="#39ff7e" font-size="9" font-family="monospace">⬆ NORTE · ZONA SEGURA</text>
+        <!-- Wind indicator -->
+        <text x="310" y="180" text-anchor="middle" fill="rgba(0,212,255,0.5)" font-size="8" font-family="monospace">VIENTO</text>
+        <text x="310" y="192" text-anchor="middle" fill="rgba(0,212,255,0.5)" font-size="11">→</text>
+        <text x="310" y="202" text-anchor="middle" fill="rgba(0,212,255,0.4)" font-size="7" font-family="monospace">NE</text>
+
+        <!-- YOU marker pulse -->
+        <circle cx="161" cy="148" r="8" fill="none" stroke="#00d4ff" stroke-width="1.5" opacity="0.5">
+          <animate attributeName="r" values="8;14;8" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.5;0;0.5" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="161" cy="148" r="4" fill="#00d4ff"/>
+      </svg>
+      <div class="kid-map-legend">
+        <div class="km-leg"><div class="km-dot" style="background:#39ff7e"></div>Ruta principal</div>
+        <div class="km-leg"><div class="km-dot" style="background:#f5c542"></div>Rutas alternas</div>
+        <div class="km-leg"><div class="km-dot" style="background:#ff3b3b"></div>Zona peligro</div>
+        <div class="km-leg"><div class="km-dot" style="background:#00d4ff"></div>Tu ubicación</div>
+      </div>
+    </div>
+
+    <!-- NO PLANTAR con imágenes visuales -->
+    <div style="margin:0 14px">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--red);letter-spacing:1px;margin-bottom:8px">❌ NO PLANTAR AHORA</div>
+    </div>
+    <div class="no-plant-grid">
+      <!-- Each card uses an inline SVG as the "image" for reliable rendering -->
+      <div class="np-card">
+        <div class="np-img-placeholder">
+          <svg width="70" height="70" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="35" cy="35" r="33" fill="rgba(255,59,59,0.1)" stroke="rgba(255,59,59,0.3)" stroke-width="1"/>
+            <text x="35" y="42" text-anchor="middle" font-size="32">🍓</text>
+          </svg>
+        </div>
+        <div class="np-badge">✕</div>
+        <div class="np-label">Frutilla</div>
+        <div class="np-sub">Necesita mucha agua</div>
+      </div>
+      <div class="np-card">
+        <div class="np-img-placeholder">
+          <svg width="70" height="70" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="35" cy="35" r="33" fill="rgba(255,59,59,0.1)" stroke="rgba(255,59,59,0.3)" stroke-width="1"/>
+            <text x="35" y="42" text-anchor="middle" font-size="32">🥦</text>
+          </svg>
+        </div>
+        <div class="np-badge">✕</div>
+        <div class="np-label">Brócoli</div>
+        <div class="np-sub">Demasiado calor</div>
+      </div>
+      <div class="np-card">
+        <div class="np-img-placeholder">
+          <svg width="70" height="70" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="35" cy="35" r="33" fill="rgba(255,59,59,0.1)" stroke="rgba(255,59,59,0.3)" stroke-width="1"/>
+            <text x="35" y="42" text-anchor="middle" font-size="32">🥬</text>
+          </svg>
+        </div>
+        <div class="np-badge">✕</div>
+        <div class="np-label">Lechuga</div>
+        <div class="np-sub">Se quema al sol</div>
+      </div>
+    </div>
+
+    <!-- SÍ PLANTAR niño -->
+    <div style="margin:14px 14px 4px">
+      <div style="font-family:var(--mono);font-size:11px;color:var(--green);letter-spacing:1px;margin-bottom:8px">✅ SÍ PUEDES PLANTAR</div>
+    </div>
+    <div class="yes-plant-grid">
+      <div class="yp-card">
+        <div class="yp-img-placeholder">
+          <svg width="70" height="70" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="35" cy="35" r="33" fill="rgba(57,255,126,0.08)" stroke="rgba(57,255,126,0.3)" stroke-width="1"/>
+            <text x="35" y="42" text-anchor="middle" font-size="32">🍉</text>
+          </svg>
+        </div>
+        <div class="yp-label">Sandía</div>
+      </div>
+      <div class="yp-card">
+        <div class="yp-img-placeholder">
+          <svg width="70" height="70" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="35" cy="35" r="33" fill="rgba(57,255,126,0.08)" stroke="rgba(57,255,126,0.3)" stroke-width="1"/>
+            <text x="35" y="42" text-anchor="middle" font-size="32">🍅</text>
+          </svg>
+        </div>
+        <div class="yp-label">Tomate</div>
+      </div>
+      <div class="yp-card">
+        <div class="yp-img-placeholder">
+          <svg width="70" height="70" viewBox="0 0 70 70" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="35" cy="35" r="33" fill="rgba(57,255,126,0.08)" stroke="rgba(57,255,126,0.3)" stroke-width="1"/>
+            <text x="35" y="42" text-anchor="middle" font-size="32">🌳</text>
+          </svg>
+        </div>
+        <div class="yp-label">Quillay</div>
+      </div>
+    </div>
+    <div style="margin:10px 14px 0;font-family:var(--mono);font-size:10px;color:var(--text-dim);text-align:center;line-height:1.6">¡Plantar árboles nativos<br>ayuda a proteger el bosque! 🌿</div>
+
+    <button class="sbtn g" onclick="goScreen('s-evacuacion-nino')" style="font-size:16px;margin-top:14px">🗺️ VER EL CAMINO SEGURO</button>
+  </div>
+  <div class="nav">
+    <button class="nb2 active" onclick="sa(this)"><span class="ni">🏠</span>INICIO</button>
+    <button class="nb2" onclick="sa(this);goScreen('s-evacuacion-nino')"><span class="ni">🚶</span>SALIR</button>
+    <button class="nb2" onclick="sa(this);goScreen('s-login')"><span class="ni">👤</span>VOLVER</button>
+  </div>
+</div>
+
+<!-- ══ EVACUACION NIÑO (pantalla completa) ══ -->
+<div class="screen" id="s-evacuacion-nino">
+  <div class="topbar">
+    <div><div class="tb-title" style="font-size:16px">🗺️ ¡CÓMO SALIR!</div><div class="tb-sub">SIGUE LA LÍNEA VERDE</div></div>
+    <button class="ib" onclick="goScreen('s-nino')">⬅</button>
+  </div>
+  <div class="scroll">
+    <div style="margin:14px;background:rgba(57,255,126,.08);border:1px solid rgba(57,255,126,.3);border-radius:14px;padding:12px 14px">
+      <div style="font-size:15px;font-weight:800;color:var(--green);margin-bottom:4px">🟢 Ve hacia el NORTE</div>
+      <div style="font-family:var(--mono);font-size:10px;color:var(--text-dim);line-height:1.7">Av. O'Higgins → Ruta 5 Norte<br>📍 Meta: Estadio Municipal · 12 km</div>
+    </div>
+    <!-- Big evacuation map for kids -->
+    <div style="margin:10px 14px 0;background:#081218;border:1px solid var(--border);border-radius:16px;overflow:hidden">
+      <svg viewBox="0 0 320 420" xmlns="http://www.w3.org/2000/svg" style="width:100%;display:block;padding:8px">
+        <rect width="320" height="420" fill="#081218"/>
+        <!-- Streets -->
+        <line x1="0" y1="220" x2="320" y2="220" stroke="#1e3a4a" stroke-width="20"/>
+        <line x1="160" y1="0" x2="160" y2="420" stroke="#1e3a4a" stroke-width="14"/>
+        <line x1="0" y1="340" x2="320" y2="340" stroke="#1e3a4a" stroke-width="10"/>
+        <line x1="70" y1="0" x2="70" y2="420" stroke="#1e3a4a" stroke-width="8"/>
+        <line x1="250" y1="0" x2="250" y2="420" stroke="#1e3a4a" stroke-width="8"/>
+        <line x1="0" y1="100" x2="320" y2="100" stroke="#1e3a4a" stroke-width="8"/>
+
+        <!-- Street labels -->
+        <text x="160" y="216" text-anchor="middle" fill="#3a6a80" font-size="8" font-family="monospace">AV. O'HIGGINS →NORTE</text>
+
+        <!-- FIRE ZONE -->
+        <ellipse cx="100" cy="370" rx="90" ry="45" fill="rgba(255,59,59,0.2)" stroke="rgba(255,59,59,0.6)" stroke-width="2"/>
+        <text x="65" y="368" font-size="28">🔥</text>
+        <text x="95" y="368" font-size="28">🔥</text>
+        <text x="100" y="398" text-anchor="middle" fill="#ff3b3b" font-size="10" font-family="monospace" font-weight="bold">⚠ SECTOR PELIGROSO</text>
+
+        <!-- Smoke -->
+        <text x="110" y="330" fill="rgba(255,100,0,0.35)" font-size="18">💨</text>
+        <text x="140" y="310" fill="rgba(255,100,0,0.25)" font-size="14">💨</text>
+
+        <!-- YOUR HOUSE -->
+        <rect x="140" y="258" width="28" height="24" rx="3" fill="#162a3a" stroke="#00d4ff" stroke-width="2.5"/>
+        <polygon points="140,261 168,261 154,246" fill="#00a8cc"/>
+        <text x="154" y="296" text-anchor="middle" fill="#00d4ff" font-size="10" font-family="monospace" font-weight="bold">TÚ</text>
+
+        <!-- Animated route north -->
+        <polyline points="154,258 154,220 160,220 160,100 160,60"
+          fill="none" stroke="#39ff7e" stroke-width="5" stroke-linecap="round"
+          class="route-line"/>
+        <!-- Big arrow up -->
+        <polygon points="154,42 170,42 162,28" fill="#39ff7e"/>
+        <text x="162" y="22" text-anchor="middle" fill="#39ff7e" font-size="10" font-family="monospace">NORTE</text>
+
+        <!-- Step 1: Av. O'Higgins -->
+        <circle cx="154" cy="220" r="10" fill="#39ff7e" opacity="0.9"/>
+        <text x="154" y="224" text-anchor="middle" fill="#081218" font-size="9" font-weight="bold">1</text>
+        <text x="175" y="218" fill="#39ff7e" font-size="8" font-family="monospace">Dobla aquí</text>
+        <text x="175" y="228" fill="#6a8fa0" font-size="7" font-family="monospace">Av. O'Higgins</text>
+
+        <!-- Step 2: Ruta 5 -->
+        <circle cx="154" cy="100" r="10" fill="#39ff7e" opacity="0.9"/>
+        <text x="154" y="104" text-anchor="middle" fill="#081218" font-size="9" font-weight="bold">2</text>
+        <text x="175" y="98" fill="#39ff7e" font-size="8" font-family="monospace">Sigue recto</text>
+        <text x="175" y="108" fill="#6a8fa0" font-size="7" font-family="monospace">Ruta 5 Norte</text>
+
+        <!-- Stadium (destination) -->
+        <rect x="120" y="34" width="76" height="36" rx="6" fill="rgba(57,255,126,0.2)" stroke="#39ff7e" stroke-width="2.5"/>
+        <text x="158" y="48" text-anchor="middle" font-size="16">🏟️</text>
+        <text x="158" y="62" text-anchor="middle" fill="#39ff7e" font-size="9" font-family="monospace" font-weight="bold">¡ESTADIO!</text>
+        <!-- Pulse on stadium -->
+        <circle cx="158" cy="52" r="30" fill="none" stroke="#39ff7e" stroke-width="1.5">
+          <animate attributeName="r" values="30;42;30" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.6;0;0.6" dur="2s" repeatCount="indefinite"/>
+        </circle>
+
+        <!-- Secondary: Liceo -->
+        <polyline points="154,258 70,258 70,220 70,100"
+          fill="none" stroke="#f5c542" stroke-width="2.5" stroke-dasharray="6,4" opacity="0.7"/>
+        <rect x="40" y="84" width="54" height="26" rx="4" fill="rgba(245,197,66,0.15)" stroke="#f5c542" stroke-width="1.5"/>
+        <text x="67" y="97" text-anchor="middle" font-size="13">🏫</text>
+        <text x="67" y="107" text-anchor="middle" fill="#f5c542" font-size="7" font-family="monospace">LICEO</text>
+
+        <!-- Wind arrow -->
+        <text x="260" y="290" text-anchor="middle" fill="rgba(0,212,255,0.5)" font-size="9" font-family="monospace">VIENTO</text>
+        <text x="260" y="308" text-anchor="middle" fill="rgba(0,212,255,0.6)" font-size="20">↗</text>
+        <text x="260" y="326" text-anchor="middle" fill="rgba(0,212,255,0.4)" font-size="8" font-family="monospace">NE</text>
+
+        <!-- You pulse -->
+        <circle cx="154" cy="258" r="10" fill="none" stroke="#00d4ff" stroke-width="2">
+          <animate attributeName="r" values="10;18;10" dur="2s" repeatCount="indefinite"/>
+          <animate attributeName="opacity" values="0.7;0;0.7" dur="2s" repeatCount="indefinite"/>
+        </circle>
+        <circle cx="154" cy="258" r="5" fill="#00d4ff"/>
+
+        <!-- Distance label -->
+        <text x="185" y="168" fill="#6a8fa0" font-size="8" font-family="monospace">12 km</text>
+        <text x="185" y="180" fill="#6a8fa0" font-size="8" font-family="monospace">~18 min</text>
+      </svg>
+    </div>
+
+    <!-- Safe zones list for kids -->
+    <div style="margin:12px 14px 0;font-family:var(--mono);font-size:11px;color:var(--cyan);letter-spacing:1px;margin-bottom:6px">📍 LUGARES SEGUROS</div>
+    <div style="margin:0 14px">
+      <div style="background:rgba(57,255,126,.07);border:1px solid rgba(57,255,126,.3);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:28px">🏟️</span>
+        <div>
+          <div style="font-size:14px;font-weight:800;color:var(--green)">Estadio Municipal</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">¡EL MÁS SEGURO! · Hay médicos y agua</div>
+        </div>
+      </div>
+      <div style="background:rgba(245,197,66,.07);border:1px solid rgba(245,197,66,.3);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:28px">🏫</span>
+        <div>
+          <div style="font-size:14px;font-weight:800;color:var(--yellow)">Liceo Bicentenario</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">Alternativa · Ruta por Maipú</div>
+        </div>
+      </div>
+      <div style="background:rgba(245,197,66,.07);border:1px solid rgba(245,197,66,.3);border-radius:12px;padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:28px">⛲</span>
+        <div>
+          <div style="font-size:14px;font-weight:800;color:var(--yellow)">Plaza de Armas</div>
+          <div style="font-family:var(--mono);font-size:9px;color:var(--text-dim)">Punto de encuentro · Ruta Este</div>
+        </div>
+      </div>
+    </div>
+
+    <button class="sbtn b" style="font-size:16px">📞 LLAMAR AL 132 · BOMBEROS</button>
+  </div>
+  <div class="nav">
+    <button class="nb2" onclick="sa(this);goScreen('s-nino')"><span class="ni">🏠</span>INICIO</button>
+    <button class="nb2 active"><span class="ni">🗺️</span>MAPA</button>
+    <button class="nb2" onclick="sa(this);goScreen('s-login')"><span class="ni">👤</span>VOLVER</button>
+  </div>
+</div>
+
+<!-- ══ ALERTAS ══ -->
+<div class="screen" id="s-alertas">
+  <div class="topbar">
+    <div><div class="tb-title">ALERTAS TEMPRANAS</div><div class="tb-sub">SISTEMA ACTIVO · REGIÓN ÑUBLE</div></div>
+    <button class="ib" id="ab-btn" onclick="goBack()">⬅</button>
+  </div>
+  <div class="scroll">
+    <div class="ab" style="cursor:default;margin-top:14px"><div><div class="al">ALERTAS TEMPRANAS · SISTEMA ACTIVO</div><div class="at">Alertas Rojas<br>de Incendio</div><div class="as">▶ 3 ZONAS CRÍTICAS DETECTADAS</div></div><div style="font-size:32px">🔥</div></div>
+    <div class="sh"><span class="st">INCIDENTES ACTUALES</span><span class="sc2">3 ACTIVOS</span></div>
+    <div class="il">
+      <div class="ii"><div class="dot a"></div><div class="iic">🔥</div><div class="iin">Incendio Sector A</div><div class="sp a">ALTA</div></div>
+      <div class="ii"><div class="dot m"></div><div class="iic">🌊</div><div class="iin">Inundación Sector B</div><div class="sp m">MEDIA</div></div>
+      <div class="ii"><div class="dot b2"></div><div class="iic">🏔️</div><div class="iin">Deslizamiento Sector C</div><div class="sp b2">BAJA</div></div>
+    </div>
+    <div class="bg2" style="margin-bottom:14px">
+      <div class="bc2"><div class="bclb">HISTORIAL<br>INCIDENTES</div><div class="dw"><svg class="ds" width="80" height="80" viewBox="0 0 80 80"><circle class="dt" cx="40" cy="40" r="30"/><circle class="df" cx="40" cy="40" r="30"/></svg><div class="dtx"><span class="dp">75%</span><span class="dl">RESOLUCIÓN</span></div></div></div>
+      <div class="bc2"><div class="bclb">SENSORES<br>ACTIVOS</div><div style="font-size:32px;text-align:center;margin:8px 0">📡</div><div style="font-family:var(--mono);font-size:18px;font-weight:700;color:var(--green);text-align:center">12/12</div></div>
+    </div>
+  </div>
+  <div class="nav">
+    <button class="nb2" onclick="goBack()"><span class="ni">⬅</span>VOLVER</button>
+    <button class="nb2 active"><span class="ni">🔔</span>ALERTAS</button>
+    <button class="nb2" onclick="goScreen('s-evacuacion')"><span class="ni">🚶</span>EVACUAR</button>
+  </div>
+</div>
+
+<!-- ══ EVACUACION (ciudadano/abuelo) ══ -->
+<div class="screen" id="s-evacuacion">
+  <div class="topbar">
+    <div><div class="tb-title">EVACUACIÓN INTELIGENTE</div><div class="tb-sub">PROTOCOLO ACTIVO · IA CALCULANDO</div></div>
+    <button class="ib" onclick="goBack()">⬅</button>
+  </div>
+  <div class="scroll">
+    <div class="ia-card" style="margin:14px 14px 0">
+      <div class="ia-header"><div class="ia-icon">🤖</div><div><div class="ia-title">RUTA CALCULADA POR IA</div><div class="ia-sub">VIENTO NE · FOCO EN SECTOR A</div></div></div>
+      <div class="ia-row"><span class="ia-label">Dirección del viento</span><span class="ia-val b">NE → SO</span></div>
+      <div class="ia-row"><span class="ia-label">Zona de riesgo</span><span class="ia-val r">Sector A y C</span></div>
+      <div class="ia-row"><span class="ia-label">Ruta segura recomendada</span><span class="ia-val g">NORTE</span></div>
+    </div>
+    <div class="ec g"><div class="ecl">RUTA RECOMENDADA · IA</div><div class="ect g">🟢 Ruta Norte – Segura</div><div class="ecb">Av. O'Higgins → Ruta 5 Norte<br>Distancia: 12 km · ETA: 18 min<br>Estado: DESPEJADA · Sin humo</div></div>
+    <div class="ec y"><div class="ecl">RUTA ALTERNATIVA</div><div class="ect y">🟡 Ruta Este – Precaución</div><div class="ecb">Calle Maipú → Camino Los Álamos<br>Distancia: 18 km · ETA: 28 min<br>Estado: TRÁFICO MODERADO</div></div>
+    <div class="ec r" style="margin-bottom:14px"><div class="ecl">PUNTOS DE ENCUENTRO</div><div class="ecb" style="line-height:2.2">📍 Estadio Municipal Chillán<br>📍 Liceo Bicentenario<br>📍 Plaza de Armas</div></div>
+  </div>
+  <div class="nav">
+    <button class="nb2" onclick="goBack()"><span class="ni">⬅</span>VOLVER</button>
+    <button class="nb2 active"><span class="ni">🚶</span>EVACUAR</button>
+    <button class="nb2" onclick="goScreen('s-alertas')"><span class="ni">🔔</span>ALERTAS</button>
+  </div>
+</div>
+
+</div><!-- /phone -->
+<script>
+let profile='ciudadano', prev='s-ciudadano';
+const MD={
+  'inc-a':{t:'🔥 Incendio Sector A',b:'Severidad: ALTA\nDetectado: 14:32 hrs\nTemperatura: 34°C · Viento: 30 km/h NE\n\n🤖 IA Predicción:\nPropagación hacia Sector C en 45 min\nDirección: Suroeste\n\n⚠️ Manténgase alejado de la zona.\nSiga instrucciones de evacuación.'},
+  'inc-b':{t:'🌊 Inundación Sector B',b:'Severidad: MEDIA\nRío Chillán km 12 · Nivel +45 cm\nPrecipitación: 28mm/h\n\n🤖 IA Predicción:\nPico de inundación en 3 horas\nZonas bajas: evacuar preventivamente.'},
+  'inc-c':{t:'🏔️ Deslizamiento Sector C',b:'Severidad: BAJA\nCerro La Cruz · Humedad suelo: 82%\n\n🤖 IA Predicción:\nSin riesgo inmediato.\nMonitoreo activo cada 15 min.'},
+  'riesgo':{t:'🔥 Índice de Riesgo',b:'Nivel actual: BAJO en zona estación\n\nFWI Global: 42 / 100\nHumedad relativa: 18%\nViento: 25 km/h NE\nTemperatura: 29°C\n\n🤖 IA Análisis:\nRiesgo puede aumentar a ALTO\npor aumento de viento esta tarde.'},
+  'b-a':{t:'🔥 FOCO A · Datos Tácticos',b:'Coordenadas: -36.624° / -72.115°\nSensor: NODE-01 (ESP32)\nT: 34°C · H: 15% · CO: 0.4ppm\nViento: 30 km/h NE · FWI local: 58\n\n🤖 IA Táctica:\nExpansión en 45 min → Sector C\nRecursos: 2 camiones + 1 heli\nAcceso: Camino Forestal km 4\nPrioridad: CRÍTICA'},
+  'b-b':{t:'🌊 FOCO B · Datos Tácticos',b:'Coordenadas: -36.601° / -72.091°\nSensor: NODE-02 (ESP32)\nNivel río: +45 cm · Caudal: 320 m³/s\nPrecipitación: 28mm/h\n\n🤖 IA Táctica:\nPico inundación en 3 hrs\nEvacuar zonas bajas Sector B\nAcceso: Ruta B-45'},
+  'b-c':{t:'🏔️ FOCO C · Datos Tácticos',b:'Coordenadas: -36.589° / -72.103°\nSensor: NODE-03 (ESP32)\nHumedad suelo: 82% · Pendiente: 35°\nVolumen estimado: 200 m³\n\n🤖 IA Táctica:\nEstable · Sin riesgo inmediato\nVigilancia activa · Baja prioridad'},
+  'evac-asistida':{t:'♿ Evacuación Asistida · IA',b:'Modo activado para movilidad reducida.\n\nRuta recalculada:\n→ Av. O\'Higgins (pavimentada total)\n→ Sin escalones ni terreno irregular\n→ ETA: 22 min\n\n✓ Bus emergencia disponible\n   Av. O\'Higgins esq. Maipú\n   Capacidad: 40 personas\n   Sale en: 18 min\n\n✓ Ambulancia de apoyo en ruta\n✓ Personal médico en Punto A'},
+  'ruta148':{t:'🚗 Ruta 148 · km 23 COLAPSADA',b:'Estado: BLOQUEADA\nVehículos atascados: ~400\nTiempo estimado paso: +2 horas\n\n🤖 IA Recomendación:\nEVITAR esta ruta completamente.\n\nRuta alternativa sugerida:\nCamino El Rodeo → Los Robles\n→ Ruta 5 Norte\nETA adicional: solo +8 min'},
+  'puente':{t:'🌉 Puente Río Chillán',b:'Estado: PASO LENTO\nVehículos/hora: 180 (cap. 300)\n\n⚠ Nivel río +45cm\nMonitoreo activo de estructura.\n\n🤖 IA: Puente viable pero lento.\nAlternativa: Vado El Sauce (km 6)\nSolo vehículos 4x4.'},
+};
+function showM(k){
+  const m=MD[k]; if(!m) return;
+  const mid=profile==='bombero'?'mo-b':'mo-c';
+  document.getElementById(mid+'-t').textContent=m.t;
+  document.getElementById(mid+'-b').textContent=m.b;
+  document.getElementById(mid).classList.add('open');
+}
+function cm(id){document.getElementById(id).classList.remove('open')}
+function goScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  // scroll to top
+  const sc=document.getElementById(id).querySelector('.scroll');
+  if(sc) sc.scrollTop=0;
+}
+function goBack(){goScreen(prev)}
+function sa(btn){btn.closest('.nav').querySelectorAll('.nb2').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
+function switchTab(btn,tid){
+  btn.closest('.tabs').querySelectorAll('.tbb').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
+  ['tc-inc','tc-fam','tc-agr','tc-veg','tc-dat','tb-rec','tb-sen','tb-veg','tb-off','tb-cn'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display=id===tid?'block':'none'
+  });
+}
+function toggleOffline(cb){
+  document.getElementById('off-label').textContent=cb.checked?'OFFLINE':'ONLINE';
+  document.getElementById('off-label').style.color=cb.checked?'var(--red)':'var(--green)';
+  document.getElementById('offline-panel').classList.toggle('show',cb.checked);
+}
+function loginAs(p){
+  profile=p;
+  if(p==='bombero'){prev='s-bombero';goScreen('s-bombero')}
+  else if(p==='abuelo'){prev='s-abuelo';goScreen('s-abuelo')}
+  else if(p==='nino'){prev='s-nino';goScreen('s-nino')}
+  else{prev='s-ciudadano';goScreen('s-ciudadano')}
+}
+</script>
+</body>
+</html>
